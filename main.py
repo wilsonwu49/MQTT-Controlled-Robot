@@ -37,6 +37,7 @@ def connect_wifi():
     wlan.active(True)
     if not wlan.isconnected():
         print("Connecting to WiFi...")
+        wlan.disconnect()
         wlan.connect(SSID, PASSWORD)
         timeout = 10
         while not wlan.isconnected() and timeout > 0:
@@ -54,20 +55,20 @@ def sub_cb(topic, msg):
     print("Received", topic, msg)
     try:
         if topic == TOPIC_SUB_SPD:
-            state["speed"] = int(msg.decode())
+            state["speed"] = max(0, min(100, int(msg.decode())))
         if topic == TOPIC_SUB_DIR:
             state["direction"] = msg.decode()
         if topic == TOPIC_SUB_L0:
             d = json.loads(msg)
-            LEDS[0] = [d["r"],d["g"],d["b"]]
+            LEDS[0] = [max(0, min(255, int(d[k]))) for k in "rgb"]
         if topic == TOPIC_SUB_L1:
             d = json.loads(msg)
-            LEDS[1] = [d["r"],d["g"],d["b"]]
+            LEDS[1] = [max(0, min(255, int(d[k]))) for k in "rgb"]
         
         drive(state["speed"], state["direction"])
         write_leds()
         
-    except (ValueError, KeyError) as e:
+    except Exception as e:
         print("bad message:", e)
 
 def mqtt_connect():
@@ -134,16 +135,18 @@ right = Motor(14, 27, 39, 39)
 
 # light color setup
 lights = neopixel.NeoPixel(Pin(15), 2)
-LEDS[0] = LEDS[1] = (10, 10, 10)
+LEDS[0] = LEDS[1] = (20, 20, 0)
 write_leds()
 
 if connect_wifi():
     print("Connected")
-    LEDS[0] = LEDS[1] = (0, 0, 0)
+    LEDS[0] = LEDS[1] = (0, 20, 20)
     write_leds()
     client = mqtt_connect()
     if client:
-        try:
+        LEDS[0] = LEDS[1] = (0, 0, 0)
+        write_leds()
+        try: 
             while True:
                 client.check_msg()
                 time.sleep_ms(20)
@@ -160,5 +163,5 @@ time.sleep_ms(500)
 lights[0] = lights[1] = (60, 0, 0)
 lights.write()
 time.sleep_ms(500)
-
-
+lights[0] = lights[1] = (0, 0, 0)
+lights.write()
