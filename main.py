@@ -26,7 +26,7 @@ TOPIC_SUB_L0 = b"ME35/led/0"
 TOPIC_SUB_L1 = b"ME35/led/1"
 
 # listener setup
-state = {"speed": 0, "direction": "stop"}
+state = {"speed": 20, "direction": "stop"}
 LEDS = [(0,0,0),(0,0,0)]
 
 L_FWD = 1
